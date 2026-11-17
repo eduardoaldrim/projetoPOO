@@ -1,4 +1,4 @@
-package entidades;
+package modelo;
 
 public interface Monitoravel {
 
