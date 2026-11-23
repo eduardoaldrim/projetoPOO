@@ -2,20 +2,36 @@ package modelo;
 
 import modelo.enumeradas.Intensidade;
 
-public class ExercicioCardio {
-    private Integer duracaoMinutos;
+// Exercicio aerobico: esteira, bike, eliptico, corda...
+public class ExercicioCardio extends Exercicio {
+    private int duracaoMinutos;
     private Intensidade intensidade;
 
-    public ExercicioCardio(Integer duracaoMinutos, Intensidade intensidade) {
+    public ExercicioCardio(int id, String nome, String grupoMuscular, String descricao,
+                           int duracaoMinutos, Intensidade intensidade) {
+        super(id, nome, grupoMuscular, descricao);
         this.duracaoMinutos = duracaoMinutos;
         this.intensidade = intensidade;
     }
 
-    public Integer getDuracaoMinutos() {
+    // formula do MET: MET x peso x horas
+    // como o exercicio não sabe quem vai fazer, usamos um peso de referencia de 70kg
+    @Override
+    public double estimarCaloriasGastas() {
+        // cada intensidade tem um MET diferente
+        double met = switch (intensidade) {
+            case BAIXA -> 4.0;
+            case MEDIA -> 7.0;
+            case ALTA -> 10.0;
+        };
+        return met * 70 * (duracaoMinutos / 60.0); // divide por 60 pra passar minutos pra horas
+    }
+
+    public int getDuracaoMinutos() {
         return duracaoMinutos;
     }
 
-    public void setDuracaoMinutos(Integer duracaoMinutos) {
+    public void setDuracaoMinutos(int duracaoMinutos) {
         this.duracaoMinutos = duracaoMinutos;
     }
 

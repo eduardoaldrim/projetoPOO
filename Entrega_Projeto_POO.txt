@@ -1,0 +1,1811 @@
+PROJETO DE PROGRAMAÇÃO ORIENTADA A OBJETOS - GERENCIADOR DE TREINOS DE ACADEMIA
+Prof. Artur Henrique Kronbauer
+
+Integrantes:
+- Eduardo Aldrim Filho 
+- Matheus de Almeida
+- Kauã Dorea
+- Cauã de Jesus
+
+==================================================================
+// modelo/Monitoravel.java
+==================================================================
+package modelo;
+
+// Interface pra tudo que dá pra estimar quanto de caloria gasta.
+// Quem implementa: Exercicio (e as 3 filhas, por herança) e o Treino.
+// O Treino usa isso pra somar as calorias sem precisar saber o tipo de cada exercicio.
+public interface Monitoravel {
+
+    // devolve a estimativa de calorias gastas (em kcal)
+    double estimarCaloriasGastas();
+}
+
+==================================================================
+// modelo/Exercicio.java
+==================================================================
+package modelo;
+
+// Classe base de todos os exercicios. É abstrata, entao ninguem faz "new Exercicio()",
+// tem que criar um de força, cardio ou funcional.
+// Ela implementa Monitoravel mas deixa o calculo das calorias pra cada filha fazer do seu jeito.
+public abstract class Exercicio implements Monitoravel {
+    private int id;
+    private String nome;
+    private String grupoMuscular;
+    private String descricao;
+
+    // protected pq só as classes filhas chamam esse construtor (pelo super)
+    protected Exercicio(int id, String nome, String grupoMuscular, String descricao) {
+        this.id = id;
+        this.nome = nome;
+        this.grupoMuscular = grupoMuscular;
+        this.descricao = descricao;
+    }
+
+    // cada tipo de exercicio é obrigado a implementar a sua conta
+    @Override
+    public abstract double estimarCaloriasGastas();
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public String getGrupoMuscular() {
+        return grupoMuscular;
+    }
+
+    public void setGrupoMuscular(String grupoMuscular) {
+        this.grupoMuscular = grupoMuscular;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
+
+    // cabeçalho da tabela de exercicios, fica aqui junto do toString pra coluna bater certinho
+    public static String cabecalhoTabela() {
+        return String.format("%-4s | %-34s | %-14s | %-18s | %s",
+                "ID", "Nome", "Grupo muscular", "Tipo", "Calorias (kcal)");
+    }
+
+    // uma linha da tabela. O estimarCaloriasGastas() aqui chama o metodo da classe filha (polimorfismo)
+    @Override
+    public String toString() {
+        return String.format("%-4d | %-34s | %-14s | %-18s | %.1f",
+                id, nome, grupoMuscular, getClass().getSimpleName(), estimarCaloriasGastas());
+    }
+}
+
+==================================================================
+// modelo/ExercicioDeForca.java
+==================================================================
+package modelo;
+
+// Exercicio de musculação, com carga (supino, agachamento, leg press...)
+public class ExercicioDeForca extends Exercicio {
+    private double cargaKg;
+    private int series;
+    private int repeticoes;
+    private String equipamento;
+
+    // os 4 primeiros vão pro construtor da classe mae, o resto é só de força
+    public ExercicioDeForca(int id, String nome, String grupoMuscular, String descricao,
+                            double cargaKg, int series, int repeticoes, String equipamento) {
+        super(id, nome, grupoMuscular, descricao);
+        this.cargaKg = cargaKg;
+        this.series = series;
+        this.repeticoes = repeticoes;
+        this.equipamento = equipamento;
+    }
+
+    // conta simplificada: series x repetições x carga x um fator fixo (0.05)
+    // não é cientifico, é só pra ter uma estimativa didatica
+    @Override
+    public double estimarCaloriasGastas() {
+        return series * repeticoes * cargaKg * 0.05;
+    }
+
+    public double getCargaKg() {
+        return cargaKg;
+    }
+
+    public void setCargaKg(double cargaKg) {
+        this.cargaKg = cargaKg;
+    }
+
+    public int getSeries() {
+        return series;
+    }
+
+    public void setSeries(int series) {
+        this.series = series;
+    }
+
+    public int getRepeticoes() {
+        return repeticoes;
+    }
+
+    public void setRepeticoes(int repeticoes) {
+        this.repeticoes = repeticoes;
+    }
+
+    public String getEquipamento() {
+        return equipamento;
+    }
+
+    public void setEquipamento(String equipamento) {
+        this.equipamento = equipamento;
+    }
+}
+
+==================================================================
+// modelo/ExercicioCardio.java
+==================================================================
+package modelo;
+
+import modelo.enumeradas.Intensidade;
+
+// Exercicio aerobico: esteira, bike, eliptico, corda...
+public class ExercicioCardio extends Exercicio {
+    private int duracaoMinutos;
+    private Intensidade intensidade;
+
+    public ExercicioCardio(int id, String nome, String grupoMuscular, String descricao,
+                           int duracaoMinutos, Intensidade intensidade) {
+        super(id, nome, grupoMuscular, descricao);
+        this.duracaoMinutos = duracaoMinutos;
+        this.intensidade = intensidade;
+    }
+
+    // formula do MET: MET x peso x horas
+    // como o exercicio não sabe quem vai fazer, usamos um peso de referencia de 70kg
+    @Override
+    public double estimarCaloriasGastas() {
+        // cada intensidade tem um MET diferente
+        double met = switch (intensidade) {
+            case BAIXA -> 4.0;
+            case MEDIA -> 7.0;
+            case ALTA -> 10.0;
+        };
+        return met * 70 * (duracaoMinutos / 60.0); // divide por 60 pra passar minutos pra horas
+    }
+
+    public int getDuracaoMinutos() {
+        return duracaoMinutos;
+    }
+
+    public void setDuracaoMinutos(int duracaoMinutos) {
+        this.duracaoMinutos = duracaoMinutos;
+    }
+
+    public Intensidade getIntensidade() {
+        return intensidade;
+    }
+
+    public void setIntensidade(Intensidade intensidade) {
+        this.intensidade = intensidade;
+    }
+}
+
+==================================================================
+// modelo/ExercicioFuncional.java
+==================================================================
+package modelo;
+
+// Exercicio funcional / circuito: burpee, kettlebell, box jump...
+public class ExercicioFuncional extends Exercicio {
+    private int rodadas;
+    private int tempoPorRodadaSegundos;
+
+    public ExercicioFuncional(int id, String nome, String grupoMuscular, String descricao,
+                              int rodadas, int tempoPorRodadaSegundos) {
+        super(id, nome, grupoMuscular, descricao);
+        this.rodadas = rodadas;
+        this.tempoPorRodadaSegundos = tempoPorRodadaSegundos;
+    }
+
+    // calorias proporcionais ao tempo total: rodadas x minutos de cada rodada x 10 kcal por minuto
+    @Override
+    public double estimarCaloriasGastas() {
+        return rodadas * (tempoPorRodadaSegundos / 60.0) * 10;
+    }
+
+    public int getRodadas() {
+        return rodadas;
+    }
+
+    public void setRodadas(int rodadas) {
+        this.rodadas = rodadas;
+    }
+
+    public int getTempoPorRodadaSegundos() {
+        return tempoPorRodadaSegundos;
+    }
+
+    public void setTempoPorRodadaSegundos(int tempoPorRodadaSegundos) {
+        this.tempoPorRodadaSegundos = tempoPorRodadaSegundos;
+    }
+}
+
+==================================================================
+// modelo/Treino.java
+==================================================================
+package modelo;
+
+import modelo.enumeradas.Objetivo;
+
+import java.util.ArrayList;
+import java.util.List;
+
+// Um treino é um conjunto de exercicios feitos numa sessão (ex: "Peito e triceps" na segunda).
+// Composição: o treino tem a lista de exercicios dele.
+public class Treino implements Monitoravel {
+    private int id;
+    private String nome;
+    private Objetivo objetivo;
+    private String diaDaSemana;
+    private List<Exercicio> exercicios = new ArrayList<>();
+
+    public Treino(int id, String nome, Objetivo objetivo, String diaDaSemana) {
+        this.id = id;
+        this.nome = nome;
+        this.objetivo = objetivo;
+        this.diaDaSemana = diaDaSemana;
+    }
+
+    // soma as calorias de todos os exercicios do treino.
+    // aqui é o polimorfismo mais claro: o treino nem sabe se é força, cardio ou funcional,
+    // ele só chama estimarCaloriasGastas() e cada um responde do seu jeito
+    @Override
+    public double estimarCaloriasGastas() {
+        double total = 0;
+        for (Exercicio exercicio : exercicios) {
+            total += exercicio.estimarCaloriasGastas();
+        }
+        return total;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public Objetivo getObjetivo() {
+        return objetivo;
+    }
+
+    public void setObjetivo(Objetivo objetivo) {
+        this.objetivo = objetivo;
+    }
+
+    public String getDiaDaSemana() {
+        return diaDaSemana;
+    }
+
+    public void setDiaDaSemana(String diaDaSemana) {
+        this.diaDaSemana = diaDaSemana;
+    }
+
+    public List<Exercicio> getExercicios() {
+        return exercicios;
+    }
+
+    // cabeçalho da tabela de treinos
+    public static String cabecalhoTabela() {
+        return String.format("%-4s | %-20s | %-15s | %-8s | %-10s | %s",
+                "ID", "Nome", "Objetivo", "Dia", "Exercicios", "Calorias (kcal)");
+    }
+
+    // linha da tabela com os dados do treino
+    @Override
+    public String toString() {
+        return String.format("%-4d | %-20s | %-15s | %-8s | %-10d | %.1f",
+                id, nome, objetivo, diaDaSemana, exercicios.size(), estimarCaloriasGastas());
+    }
+}
+
+==================================================================
+// modelo/Aluno.java
+==================================================================
+package modelo;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+// Aluno da academia. Cada aluno tem a lista de treinos dele (composição).
+public class Aluno {
+    private int id;
+    private String nome;
+    private int idade;
+    private double pesoKg;
+    private double alturaM;
+    private LocalDate dataDeCadastro;
+
+    // começa vazia, os treinos vão sendo colocados depois
+    private List<Treino> treinos = new ArrayList<>();
+
+    public Aluno(int id, LocalDate dataDeCadastro, double alturaM, double pesoKg, int idade, String nome) {
+        this.id = id;
+        this.dataDeCadastro = dataDeCadastro;
+        this.alturaM = alturaM;
+        this.pesoKg = pesoKg;
+        this.idade = idade;
+        this.nome = nome;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public void setIdade(int idade) {
+        this.idade = idade;
+    }
+
+    public void setPesoKg(double pesoKg) {
+        this.pesoKg = pesoKg;
+    }
+
+    public void setAlturaM(double alturaM) {
+        this.alturaM = alturaM;
+    }
+
+    public void setDataDeCadastro(LocalDate dataDeCadastro) {
+        this.dataDeCadastro = dataDeCadastro;
+    }
+
+    public double getAlturaM() {
+        return alturaM;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public int getIdade() {
+        return idade;
+    }
+
+    public double getPesoKg() {
+        return pesoKg;
+    }
+
+    public LocalDate getDataDeCadastro() {
+        return dataDeCadastro;
+    }
+
+    public List<Treino> getTreinos() {
+        return treinos;
+    }
+}
+
+==================================================================
+// modelo/RegistroDeTreino.java
+==================================================================
+package modelo;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+// Guarda que um aluno fez um treino em tal dia. É o historico,
+// e é daqui que saem as estatisticas de frequencia e calorias.
+public class RegistroDeTreino {
+    // formato da data na tela, tipo 05/11/2026
+    private static final DateTimeFormatter FORMATO_DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    private int id;
+    private Aluno aluno;
+    private Treino treino;
+    private LocalDate data;
+    private double caloriasEstimadas;
+
+    // as calorias já chegam calculadas. A gente guarda o valor aqui pra que,
+    // se o treino mudar depois, o historico antigo não mude junto
+    public RegistroDeTreino(int id, Aluno aluno, Treino treino, LocalDate data, double caloriasEstimadas) {
+        this.id = id;
+        this.aluno = aluno;
+        this.treino = treino;
+        this.data = data;
+        this.caloriasEstimadas = caloriasEstimadas;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public Aluno getAluno() {
+        return aluno;
+    }
+
+    public void setAluno(Aluno aluno) {
+        this.aluno = aluno;
+    }
+
+    public Treino getTreino() {
+        return treino;
+    }
+
+    public void setTreino(Treino treino) {
+        this.treino = treino;
+    }
+
+    public LocalDate getData() {
+        return data;
+    }
+
+    public void setData(LocalDate data) {
+        this.data = data;
+    }
+
+    public double getCaloriasEstimadas() {
+        return caloriasEstimadas;
+    }
+
+    public void setCaloriasEstimadas(double caloriasEstimadas) {
+        this.caloriasEstimadas = caloriasEstimadas;
+    }
+
+    // cabeçalho da tabela de registros (fica junto do toString pras colunas alinharem)
+    public static String cabecalhoTabela() {
+        return String.format("%-4s | %-20s | %-20s | %-10s | %s",
+                "ID", "Aluno", "Treino", "Data", "Calorias (kcal)");
+    }
+
+    // o registro como uma linha da tabela
+    @Override
+    public String toString() {
+        return String.format("%-4d | %-20s | %-20s | %-10s | %.1f",
+                id, aluno.getNome(), treino.getNome(), data.format(FORMATO_DATA), caloriasEstimadas);
+    }
+}
+
+==================================================================
+// modelo/enumeradas/Objetivo.java
+==================================================================
+package modelo.enumeradas;
+
+// Objetivo do treino. Usado na busca e na ordenação de treinos.
+public enum Objetivo {
+    HIPERTROFIA,
+    EMAGRECIMENTO,
+    CONDICIONAMENTO
+}
+
+==================================================================
+// modelo/enumeradas/Intensidade.java
+==================================================================
+package modelo.enumeradas;
+
+// Intensidade do exercicio cardio. Cada uma tem um MET diferente na conta das calorias.
+public enum Intensidade {
+    BAIXA,
+    MEDIA,
+    ALTA
+}
+
+==================================================================
+// repositorio/RepositorioDeDados.java
+==================================================================
+package repositorio;
+
+import java.util.List;
+
+// Interface generica com o CRUD basico. O T é o tipo guardado (Aluno, Treino, Exercicio, RegistroDeTreino).
+// Os serviços só conhecem essa interface, não a implementação. Quem escolhe a implementação
+// é o Programa, que cria o repositorio e passa pro serviço pelo construtor (inversão de controle / injeção de dependencia).
+// Se um dia quiser salvar em arquivo ou banco, é só criar outra classe que implementa isso.
+public interface RepositorioDeDados<T> {
+
+    // guarda um objeto novo
+    void inserir(T objeto);
+
+    // troca o objeto que tem esse id pelo atualizado. false se o id não existir
+    boolean atualizar(int id, T objetoAtualizado);
+
+    // tira o objeto com esse id. false se não achou
+    boolean remover(int id);
+
+    // acha pelo id, ou null se não tiver
+    T buscarPorId(int id);
+
+    // devolve todo mundo que ta guardado
+    List<T> listarTodos();
+}
+
+==================================================================
+// repositorio/RepositorioEmLista.java
+==================================================================
+package repositorio;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
+
+// Implementação do repositorio que guarda tudo na memoria, num ArrayList.
+// Como a classe é generica ela não sabe sozinha pegar o id do objeto,
+// entao recebe no construtor uma função que faz isso. Ex: new RepositorioEmLista<>(Aluno::getId)
+public class RepositorioEmLista<T> implements RepositorioDeDados<T> {
+    private ArrayList<T> dados = new ArrayList<>();
+    private Function<T, Integer> obterId;
+
+    public RepositorioEmLista(Function<T, Integer> obterId) {
+        this.obterId = obterId;
+    }
+
+    // coloca no final da lista
+    @Override
+    public void inserir(T objeto) {
+        dados.add(objeto);
+    }
+
+    // acha a posição do id e põe o objeto novo no lugar do antigo
+    @Override
+    public boolean atualizar(int id, T objetoAtualizado) {
+        int posicao = buscarPosicao(id);
+        if (posicao == -1) {
+            return false;
+        }
+        dados.set(posicao, objetoAtualizado);
+        return true;
+    }
+
+    // acha a posição e remove da lista
+    @Override
+    public boolean remover(int id) {
+        int posicao = buscarPosicao(id);
+        if (posicao == -1) {
+            return false;
+        }
+        dados.remove(posicao);
+        return true;
+    }
+
+    @Override
+    public T buscarPorId(int id) {
+        int posicao = buscarPosicao(id);
+        if (posicao == -1) {
+            return null;
+        }
+        return dados.get(posicao);
+    }
+
+    // devolve uma copia da lista, assim quem chamou pode ordenar à vontade sem bagunçar a original
+    @Override
+    public List<T> listarTodos() {
+        return new ArrayList<>(dados);
+    }
+
+    // procura em que posição da lista ta o objeto com esse id (-1 se não tiver).
+    // é usado no atualizar, remover e buscarPorId, pra não repetir o mesmo for 3 vezes
+    private int buscarPosicao(int id) {
+        for (int i = 0; i < dados.size(); i++) {
+            Integer idDoObjeto = obterId.apply(dados.get(i)); // usa a função do construtor pra pegar o id
+            if (idDoObjeto != null && idDoObjeto == id) {
+                return i;
+            }
+        }
+        return -1;
+    }
+}
+
+==================================================================
+// servico/ServicoDeAlunos.java
+==================================================================
+package servico;
+
+import modelo.Aluno;
+import modelo.Treino;
+import repositorio.RepositorioDeDados;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+// Regras de negocio dos alunos: cadastrar, alterar, remover, buscar e ordenar.
+// O repositorio vem de fora pelo construtor (injeção de dependencia), o serviço não cria ele.
+public class ServicoDeAlunos {
+    private RepositorioDeDados<Aluno> repositorio;
+
+    public ServicoDeAlunos(RepositorioDeDados<Aluno> repositorio) {
+        this.repositorio = repositorio;
+    }
+
+    // dá um id novo pro aluno e guarda
+    public Aluno cadastrar(Aluno aluno) {
+        aluno.setId(gerarProximoId());
+        repositorio.inserir(aluno);
+        return aluno;
+    }
+
+    public boolean alterar(Aluno alunoAtualizado) {
+        return repositorio.atualizar(alunoAtualizado.getId(), alunoAtualizado);
+    }
+
+    public boolean remover(int id) {
+        return repositorio.remover(id);
+    }
+
+    public Aluno buscarPorId(int id) {
+        return repositorio.buscarPorId(id);
+    }
+
+    public List<Aluno> listarTodos() {
+        return repositorio.listarTodos();
+    }
+
+    // busca por atributo: alunos que tem esse pedaço no nome (sem ligar pra maiuscula/minuscula)
+    public List<Aluno> buscarPorNome(String nome) {
+        List<Aluno> resultado = new ArrayList<>();
+        for (Aluno aluno : repositorio.listarTodos()) {
+            if (aluno.getNome().toLowerCase().contains(nome.toLowerCase())) {
+                resultado.add(aluno);
+            }
+        }
+        return resultado;
+    }
+
+    // ordem alfabetica
+    public List<Aluno> listarOrdenadoPorNome() {
+        List<Aluno> lista = repositorio.listarTodos();
+        lista.sort(Comparator.comparing(Aluno::getNome));
+        return lista;
+    }
+
+    // do mais novo pro mais velho
+    public List<Aluno> listarOrdenadoPorIdade() {
+        List<Aluno> lista = repositorio.listarTodos();
+        lista.sort(Comparator.comparingInt(Aluno::getIdade));
+        return lista;
+    }
+
+    // quando um treino é excluido, ele tem que sair da lista de todos os alunos que tinham ele
+    public void removerTreinoDosAlunos(Treino treino) {
+        for (Aluno aluno : repositorio.listarTodos()) {
+            aluno.getTreinos().remove(treino);
+        }
+    }
+
+    // pega o maior id que já existe e soma 1 (se não tiver ninguem, começa no 1)
+    private int gerarProximoId() {
+        int maiorId = 0;
+        for (Aluno aluno : repositorio.listarTodos()) {
+            if (aluno.getId() > maiorId) {
+                maiorId = aluno.getId();
+            }
+        }
+        return maiorId + 1;
+    }
+}
+
+==================================================================
+// servico/ServicoDeExercicios.java
+==================================================================
+package servico;
+
+import modelo.Exercicio;
+import repositorio.RepositorioDeDados;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+// Regras de negocio dos exercicios. Trabalha com o tipo Exercicio (a classe mae),
+// entao serve pros 3 tipos sem precisar de um serviço pra cada.
+public class ServicoDeExercicios {
+    private RepositorioDeDados<Exercicio> repositorio;
+
+    // recebe o repositorio pronto (injeção de dependencia)
+    public ServicoDeExercicios(RepositorioDeDados<Exercicio> repositorio) {
+        this.repositorio = repositorio;
+    }
+
+    public Exercicio cadastrar(Exercicio exercicio) {
+        exercicio.setId(gerarProximoId());
+        repositorio.inserir(exercicio);
+        return exercicio;
+    }
+
+    public boolean alterar(Exercicio exercicioAtualizado) {
+        return repositorio.atualizar(exercicioAtualizado.getId(), exercicioAtualizado);
+    }
+
+    public boolean remover(int id) {
+        return repositorio.remover(id);
+    }
+
+    public Exercicio buscarPorId(int id) {
+        return repositorio.buscarPorId(id);
+    }
+
+    public List<Exercicio> listarTodos() {
+        return repositorio.listarTodos();
+    }
+
+    // busca por atributo: grupo muscular (ex: digitar "perna" acha "Pernas")
+    public List<Exercicio> buscarPorGrupoMuscular(String grupoMuscular) {
+        List<Exercicio> resultado = new ArrayList<>();
+        for (Exercicio exercicio : repositorio.listarTodos()) {
+            if (exercicio.getGrupoMuscular().toLowerCase().contains(grupoMuscular.toLowerCase())) {
+                resultado.add(exercicio);
+            }
+        }
+        return resultado;
+    }
+
+    public List<Exercicio> listarOrdenadoPorNome() {
+        List<Exercicio> lista = repositorio.listarTodos();
+        lista.sort(Comparator.comparing(Exercicio::getNome));
+        return lista;
+    }
+
+    public List<Exercicio> listarOrdenadoPorGrupoMuscular() {
+        List<Exercicio> lista = repositorio.listarTodos();
+        lista.sort(Comparator.comparing(Exercicio::getGrupoMuscular));
+        return lista;
+    }
+
+    // maior id + 1
+    private int gerarProximoId() {
+        int maiorId = 0;
+        for (Exercicio exercicio : repositorio.listarTodos()) {
+            if (exercicio.getId() > maiorId) {
+                maiorId = exercicio.getId();
+            }
+        }
+        return maiorId + 1;
+    }
+}
+
+==================================================================
+// servico/ServicoDeTreinos.java
+==================================================================
+package servico;
+
+import modelo.Exercicio;
+import modelo.Treino;
+import modelo.enumeradas.Objetivo;
+import repositorio.RepositorioDeDados;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+// Regras de negocio dos treinos.
+// Recebe dois repositorios: o dos treinos e o dos exercicios. O de exercicios é pra conferir
+// se o exercicio que a pessoa quer colocar no treino existe mesmo.
+public class ServicoDeTreinos {
+    private RepositorioDeDados<Treino> repositorioTreinos;
+    private RepositorioDeDados<Exercicio> repositorioExercicios;
+
+    public ServicoDeTreinos(RepositorioDeDados<Treino> repositorioTreinos, RepositorioDeDados<Exercicio> repositorioExercicios) {
+        this.repositorioTreinos = repositorioTreinos;
+        this.repositorioExercicios = repositorioExercicios;
+    }
+
+    public Treino cadastrar(Treino treino) {
+        treino.setId(gerarProximoId());
+        repositorioTreinos.inserir(treino);
+        return treino;
+    }
+
+    // coloca o exercicio no treino, mas só se ele estiver cadastrado. Devolve false se não achou
+    public boolean adicionarExercicio(Treino treino, int idExercicio) {
+        Exercicio exercicio = repositorioExercicios.buscarPorId(idExercicio);
+        if (treino == null || exercicio == null) {
+            return false;
+        }
+        treino.getExercicios().add(exercicio);
+        return true;
+    }
+
+    // quando um exercicio é excluido, tira ele de todos os treinos que usavam
+    public void removerExercicioDosTreinos(Exercicio exercicio) {
+        for (Treino treino : repositorioTreinos.listarTodos()) {
+            treino.getExercicios().remove(exercicio);
+        }
+    }
+
+    public boolean alterar(Treino treinoAtualizado) {
+        return repositorioTreinos.atualizar(treinoAtualizado.getId(), treinoAtualizado);
+    }
+
+    public boolean remover(int id) {
+        return repositorioTreinos.remover(id);
+    }
+
+    public Treino buscarPorId(int id) {
+        return repositorioTreinos.buscarPorId(id);
+    }
+
+    public List<Treino> listarTodos() {
+        return repositorioTreinos.listarTodos();
+    }
+
+    // busca por atributo: todos os treinos com aquele objetivo
+    public List<Treino> buscarPorObjetivo(Objetivo objetivo) {
+        List<Treino> resultado = new ArrayList<>();
+        for (Treino treino : repositorioTreinos.listarTodos()) {
+            if (treino.getObjetivo() == objetivo) {
+                resultado.add(treino);
+            }
+        }
+        return resultado;
+    }
+
+    public List<Treino> listarOrdenadoPorNome() {
+        List<Treino> lista = repositorioTreinos.listarTodos();
+        lista.sort(Comparator.comparing(Treino::getNome));
+        return lista;
+    }
+
+    // ordena na ordem que os objetivos aparecem no enum (hipertrofia, emagrecimento, condicionamento)
+    public List<Treino> listarOrdenadoPorObjetivo() {
+        List<Treino> lista = repositorioTreinos.listarTodos();
+        lista.sort(Comparator.comparing(Treino::getObjetivo));
+        return lista;
+    }
+
+    private int gerarProximoId() {
+        int maiorId = 0;
+        for (Treino treino : repositorioTreinos.listarTodos()) {
+            if (treino.getId() > maiorId) {
+                maiorId = treino.getId();
+            }
+        }
+        return maiorId + 1;
+    }
+}
+
+==================================================================
+// servico/ServicoDeRegistros.java
+==================================================================
+package servico;
+
+import modelo.Aluno;
+import modelo.RegistroDeTreino;
+import modelo.Treino;
+import repositorio.RepositorioDeDados;
+
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+// Regras dos treinos realizados: registrar, alterar, remover, listar
+// e as estatisticas (frequencia no mes, total de calorias, alunos parados).
+// Igual aos outros, recebe o repositorio pelo construtor.
+public class ServicoDeRegistros {
+    private RepositorioDeDados<RegistroDeTreino> repositorio;
+
+    public ServicoDeRegistros(RepositorioDeDados<RegistroDeTreino> repositorio) {
+        this.repositorio = repositorio;
+    }
+
+    // registra que o aluno fez o treino nessa data.
+    // regra: o treino tem que ser um dos treinos do aluno, senão devolve null.
+    // as calorias são calculadas na hora com treino.estimarCaloriasGastas() (polimorfismo)
+    public RegistroDeTreino registrarTreino(Aluno aluno, Treino treino, LocalDate data) {
+        if (aluno == null || treino == null || !aluno.getTreinos().contains(treino)) {
+            return null;
+        }
+        double calorias = treino.estimarCaloriasGastas();
+        RegistroDeTreino registro = new RegistroDeTreino(gerarProximoId(), aluno, treino, data, calorias);
+        repositorio.inserir(registro);
+        return registro;
+    }
+
+    public boolean alterar(RegistroDeTreino registroAtualizado) {
+        return repositorio.atualizar(registroAtualizado.getId(), registroAtualizado);
+    }
+
+    public boolean remover(int id) {
+        return repositorio.remover(id);
+    }
+
+    // apaga o historico inteiro do aluno. Chamado quando o aluno é excluido,
+    // pra não ficar registro de um aluno que nem existe mais
+    public void removerRegistrosDoAluno(Aluno aluno) {
+        for (RegistroDeTreino registro : listarPorAluno(aluno)) {
+            repositorio.remover(registro.getId());
+        }
+    }
+
+    public RegistroDeTreino buscarPorId(int id) {
+        return repositorio.buscarPorId(id);
+    }
+
+    public List<RegistroDeTreino> listarTodos() {
+        return repositorio.listarTodos();
+    }
+
+    // busca por atributo: todos os registros de um aluno
+    public List<RegistroDeTreino> listarPorAluno(Aluno aluno) {
+        List<RegistroDeTreino> resultado = new ArrayList<>();
+        for (RegistroDeTreino registro : repositorio.listarTodos()) {
+            if (registro.getAluno().equals(aluno)) {
+                resultado.add(registro);
+            }
+        }
+        return resultado;
+    }
+
+    // do mais antigo pro mais recente
+    public List<RegistroDeTreino> listarOrdenadoPorData() {
+        List<RegistroDeTreino> lista = repositorio.listarTodos();
+        lista.sort(Comparator.comparing(RegistroDeTreino::getData));
+        return lista;
+    }
+
+    // de quem gastou mais caloria pra quem gastou menos
+    public List<RegistroDeTreino> listarOrdenadoPorCalorias() {
+        List<RegistroDeTreino> lista = repositorio.listarTodos();
+        lista.sort(Comparator.comparingDouble(RegistroDeTreino::getCaloriasEstimadas).reversed());
+        return lista;
+    }
+
+    // quantas vezes o aluno treinou num mes especifico
+    public int contarFrequenciaNoMes(Aluno aluno, YearMonth mes) {
+        int contador = 0;
+        for (RegistroDeTreino registro : listarPorAluno(aluno)) {
+            if (YearMonth.from(registro.getData()).equals(mes)) { // YearMonth.from pega só mes/ano da data
+                contador++;
+            }
+        }
+        return contador;
+    }
+
+    // frequencia no mes atual, é a coluna "Frequencia (mes)" da tabela de alunos
+    public int contarFrequenciaNoMesAtual(Aluno aluno) {
+        return contarFrequenciaNoMes(aluno, YearMonth.now());
+    }
+
+    // soma das calorias de todos os treinos que o aluno já fez
+    public double totalDeCaloriasDoAluno(Aluno aluno) {
+        double total = 0;
+        for (RegistroDeTreino registro : listarPorAluno(aluno)) {
+            total += registro.getCaloriasEstimadas();
+        }
+        return total;
+    }
+
+    // dia do ultimo treino do aluno (null se nunca treinou)
+    public LocalDate dataDoUltimoTreino(Aluno aluno) {
+        LocalDate ultima = null;
+        for (RegistroDeTreino registro : listarPorAluno(aluno)) {
+            if (ultima == null || registro.getData().isAfter(ultima)) {
+                ultima = registro.getData();
+            }
+        }
+        return ultima;
+    }
+
+    // alerta de inatividade (diferencial): alunos que não treinam faz X dias ou que nunca treinaram
+    public List<Aluno> listarAlunosInativos(List<Aluno> alunos, int dias) {
+        LocalDate limite = LocalDate.now().minusDays(dias);
+        List<Aluno> inativos = new ArrayList<>();
+        for (Aluno aluno : alunos) {
+            LocalDate ultimo = dataDoUltimoTreino(aluno);
+            if (ultimo == null || ultimo.isBefore(limite)) {
+                inativos.add(aluno);
+            }
+        }
+        return inativos;
+    }
+
+    // mostra os registros em forma de tabela
+    public void imprimirTabela(List<RegistroDeTreino> registros) {
+        if (registros.isEmpty()) {
+            System.out.println("Nenhum registro encontrado.");
+            return;
+        }
+        System.out.println(RegistroDeTreino.cabecalhoTabela());
+        for (RegistroDeTreino registro : registros) {
+            System.out.println(registro); // chama o toString do registro
+        }
+    }
+
+    private int gerarProximoId() {
+        int maiorId = 0;
+        for (RegistroDeTreino registro : repositorio.listarTodos()) {
+            if (registro.getId() > maiorId) {
+                maiorId = registro.getId();
+            }
+        }
+        return maiorId + 1;
+    }
+}
+
+==================================================================
+// aplicacao/Programa.java
+==================================================================
+package aplicacao;
+
+import modelo.Aluno;
+import modelo.Exercicio;
+import modelo.ExercicioCardio;
+import modelo.ExercicioDeForca;
+import modelo.ExercicioFuncional;
+import modelo.RegistroDeTreino;
+import modelo.Treino;
+import modelo.enumeradas.Intensidade;
+import modelo.enumeradas.Objetivo;
+import repositorio.RepositorioDeDados;
+import repositorio.RepositorioEmLista;
+import servico.ServicoDeAlunos;
+import servico.ServicoDeExercicios;
+import servico.ServicoDeRegistros;
+import servico.ServicoDeTreinos;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Scanner;
+
+/*
+ * GERENCIADOR DE TREINOS DE ACADEMIA
+ *
+ * Sistema de terminal pra uma academia: cadastra alunos, exercicios e treinos,
+ * e registra os treinos que cada aluno fez. Com os registros dá pra ver a frequencia
+ * do aluno no mes, quantas calorias ele gastou e quem ta sumido da academia.
+ *
+ * Essa é a classe principal. Ela cria os repositorios, entrega pros serviços
+ * (inversão de controle / injeção de dependencia), cadastra os dados iniciais e mostra os menus.
+ */
+public class Programa {
+    // um Scanner só pro programa todo, lendo o que a pessoa digita
+    private static Scanner entrada = new Scanner(System.in);
+    private static final DateTimeFormatter FORMATO_DATA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    // os serviços ficam aqui pra todos os menus conseguirem usar
+    private static ServicoDeAlunos servicoDeAlunos;
+    private static ServicoDeExercicios servicoDeExercicios;
+    private static ServicoDeTreinos servicoDeTreinos;
+    private static ServicoDeRegistros servicoDeRegistros;
+
+    public static void main(String[] args) {
+        // primeiro cria os repositorios. Cada um recebe como pegar o id do objeto que ele guarda
+        RepositorioDeDados<Aluno> repositorioAlunos = new RepositorioEmLista<>(Aluno::getId);
+        RepositorioDeDados<Exercicio> repositorioExercicios = new RepositorioEmLista<>(Exercicio::getId);
+        RepositorioDeDados<Treino> repositorioTreinos = new RepositorioEmLista<>(Treino::getId);
+        RepositorioDeDados<RegistroDeTreino> repositorioRegistros = new RepositorioEmLista<>(RegistroDeTreino::getId);
+
+        // aqui é a injeção de dependencia: o Programa cria o repositorio e passa pro serviço.
+        // o serviço nem sabe que por tras é um ArrayList
+        servicoDeAlunos = new ServicoDeAlunos(repositorioAlunos);
+        servicoDeExercicios = new ServicoDeExercicios(repositorioExercicios);
+        servicoDeTreinos = new ServicoDeTreinos(repositorioTreinos, repositorioExercicios);
+        servicoDeRegistros = new ServicoDeRegistros(repositorioRegistros);
+
+        carregarDadosIniciais();
+
+        // menu principal, fica rodando até escolher Sair
+        int opcao;
+        do {
+            System.out.println();
+            System.out.println("===== GERENCIADOR DE TREINOS =====");
+            System.out.println("1. Alunos");
+            System.out.println("2. Exercicios");
+            System.out.println("3. Treinos");
+            System.out.println("4. Registrar treino realizado");
+            System.out.println("5. Sair");
+            opcao = lerInteiro("Opção", 1, 5, null);
+
+            switch (opcao) {
+                case 1 -> menuAlunos();
+                case 2 -> menuExercicios();
+                case 3 -> menuTreinos();
+                case 4 -> menuRegistros();
+                case 5 -> System.out.println("Saindo... até a proxima!");
+            }
+        } while (opcao != 5);
+    }
+
+    // ==================== ALUNOS ====================
+
+    // submenu de alunos
+    private static void menuAlunos() {
+        int opcao;
+        do {
+            System.out.println();
+            System.out.println("----- ALUNOS -----");
+            imprimirSubmenu();
+            opcao = lerInteiro("Opção", 0, 6, null);
+
+            switch (opcao) {
+                case 1 -> incluirAluno();
+                case 2 -> alterarAluno();
+                case 3 -> excluirAluno();
+                case 4 -> imprimirAlunos(servicoDeAlunos.listarTodos());
+                case 5 -> imprimirAlunos(servicoDeAlunos.buscarPorNome(lerTexto("Nome (ou parte dele)", null)));
+                case 6 -> ordenarAlunos();
+            }
+        } while (opcao != 0);
+    }
+
+    private static void incluirAluno() {
+        String nome = lerTexto("Nome", null);
+        int idade = lerInteiro("Idade", 1, 120, null); // não deixa idade negativa nem zero
+        double peso = lerDouble("Peso (kg)", 1, null);
+        double altura = lerDouble("Altura (m)", 0.5, null);
+
+        Aluno aluno = new Aluno(0, LocalDate.now(), altura, peso, idade, nome); // o id certo vem do serviço
+        escolherTreinosDoAluno(aluno);
+        servicoDeAlunos.cadastrar(aluno);
+        System.out.println("Aluno cadastrado com id " + aluno.getId() + ".");
+    }
+
+    // mostra o valor atual entre colchetes, se apertar enter mantem o que já tava
+    private static void alterarAluno() {
+        Aluno aluno = servicoDeAlunos.buscarPorId(lerInteiro("ID do aluno", 1, Integer.MAX_VALUE, null));
+        if (aluno == null) {
+            System.out.println("Aluno não encontrado.");
+            return;
+        }
+        System.out.println("(aperte enter pra manter o valor atual)");
+        aluno.setNome(lerTexto("Nome", aluno.getNome()));
+        aluno.setIdade(lerInteiro("Idade", 1, 120, aluno.getIdade()));
+        aluno.setPesoKg(lerDouble("Peso (kg)", 1, aluno.getPesoKg()));
+        aluno.setAlturaM(lerDouble("Altura (m)", 0.5, aluno.getAlturaM()));
+        escolherTreinosDoAluno(aluno);
+        servicoDeAlunos.alterar(aluno);
+        System.out.println("Aluno alterado.");
+    }
+
+    private static void excluirAluno() {
+        Aluno aluno = servicoDeAlunos.buscarPorId(lerInteiro("ID do aluno", 1, Integer.MAX_VALUE, null));
+        if (aluno == null) {
+            System.out.println("Aluno não encontrado.");
+            return;
+        }
+        if (confirmar("Excluir " + aluno.getNome() + " e todo o historico dele?")) {
+            servicoDeRegistros.removerRegistrosDoAluno(aluno); // apaga o historico junto
+            servicoDeAlunos.remover(aluno.getId());
+            System.out.println("Aluno excluido.");
+        }
+    }
+
+    // pergunta quais treinos o aluno vai fazer. Enter em branco deixa como ta
+    private static void escolherTreinosDoAluno(Aluno aluno) {
+        System.out.println("Treinos disponiveis:");
+        imprimirTreinos(servicoDeTreinos.listarTodos());
+        List<Integer> ids = lerIds("IDs dos treinos separados por virgula (enter = pular)");
+        if (ids == null) {
+            return;
+        }
+        aluno.getTreinos().clear();
+        for (int id : ids) {
+            Treino treino = servicoDeTreinos.buscarPorId(id);
+            if (treino == null) {
+                System.out.println("Treino " + id + " não existe, ignorei.");
+            } else if (!aluno.getTreinos().contains(treino)) { // evita colocar o mesmo treino 2 vezes
+                aluno.getTreinos().add(treino);
+            }
+        }
+    }
+
+    private static void ordenarAlunos() {
+        System.out.println("1. Por nome");
+        System.out.println("2. Por idade");
+        System.out.println("3. Por frequencia no mes");
+        int opcao = lerInteiro("Ordenar", 1, 3, null);
+        if (opcao == 1) {
+            imprimirAlunos(servicoDeAlunos.listarOrdenadoPorNome());
+        } else if (opcao == 2) {
+            imprimirAlunos(servicoDeAlunos.listarOrdenadoPorIdade());
+        } else {
+            // a frequencia vem dos registros, entao a ordenação usa o serviço de registros. Quem treinou mais vem primeiro
+            List<Aluno> lista = servicoDeAlunos.listarTodos();
+            lista.sort(Comparator.comparingInt((Aluno a) -> servicoDeRegistros.contarFrequenciaNoMesAtual(a)).reversed());
+            imprimirAlunos(lista);
+        }
+    }
+
+    // tabela de alunos. A frequencia é calculada na hora a partir dos registros do mes atual
+    private static void imprimirAlunos(List<Aluno> alunos) {
+        if (alunos.isEmpty()) {
+            System.out.println("Nenhum aluno encontrado.");
+            return;
+        }
+        System.out.println(String.format("%-4s | %-16s | %-5s | %-9s | %-10s | %-7s | %s",
+                "ID", "Nome", "Idade", "Peso (kg)", "Altura (m)", "Treinos", "Frequencia (mes)"));
+        for (Aluno aluno : alunos) {
+            System.out.println(String.format("%-4d | %-16s | %-5d | %-9.1f | %-10.2f | %-7d | %d",
+                    aluno.getId(), aluno.getNome(), aluno.getIdade(), aluno.getPesoKg(), aluno.getAlturaM(),
+                    aluno.getTreinos().size(), servicoDeRegistros.contarFrequenciaNoMesAtual(aluno)));
+        }
+    }
+
+    // ==================== EXERCICIOS ====================
+
+    private static void menuExercicios() {
+        int opcao;
+        do {
+            System.out.println();
+            System.out.println("----- EXERCICIOS -----");
+            imprimirSubmenu();
+            opcao = lerInteiro("Opção", 0, 6, null);
+
+            switch (opcao) {
+                case 1 -> incluirExercicio();
+                case 2 -> alterarExercicio();
+                case 3 -> excluirExercicio();
+                case 4 -> imprimirExercicios(servicoDeExercicios.listarTodos());
+                case 5 -> imprimirExercicios(servicoDeExercicios.buscarPorGrupoMuscular(lerTexto("Grupo muscular", null)));
+                case 6 -> ordenarExercicios();
+            }
+        } while (opcao != 0);
+    }
+
+    private static void incluirExercicio() {
+        System.out.println("1. Força");
+        System.out.println("2. Cardio");
+        System.out.println("3. Funcional");
+        int tipo = lerInteiro("Tipo", 1, 3, null);
+
+        // esses campos são comuns aos 3 tipos (vem da classe Exercicio)
+        String nome = lerTexto("Nome", null);
+        String grupo = lerTexto("Grupo muscular", null);
+        String descricao = lerTexto("Descrição", null);
+
+        // aqui cria o tipo certo. A variavel é do tipo Exercicio mas o objeto é da classe filha
+        Exercicio exercicio;
+        if (tipo == 1) {
+            double carga = lerDouble("Carga (kg)", 0, null);
+            int series = lerInteiro("Series", 1, 50, null);
+            int repeticoes = lerInteiro("Repetições", 1, 500, null);
+            String equipamento = lerTexto("Equipamento", null);
+            exercicio = new ExercicioDeForca(0, nome, grupo, descricao, carga, series, repeticoes, equipamento);
+        } else if (tipo == 2) {
+            int duracao = lerInteiro("Duração (minutos)", 1, 600, null);
+            Intensidade intensidade = lerIntensidade(null);
+            exercicio = new ExercicioCardio(0, nome, grupo, descricao, duracao, intensidade);
+        } else {
+            int rodadas = lerInteiro("Rodadas", 1, 100, null);
+            int tempo = lerInteiro("Tempo por rodada (segundos)", 1, 3600, null);
+            exercicio = new ExercicioFuncional(0, nome, grupo, descricao, rodadas, tempo);
+        }
+        servicoDeExercicios.cadastrar(exercicio);
+        System.out.println("Exercicio cadastrado com id " + exercicio.getId() + ".");
+    }
+
+    private static void alterarExercicio() {
+        Exercicio exercicio = servicoDeExercicios.buscarPorId(lerInteiro("ID do exercicio", 1, Integer.MAX_VALUE, null));
+        if (exercicio == null) {
+            System.out.println("Exercicio não encontrado.");
+            return;
+        }
+        System.out.println("(aperte enter pra manter o valor atual)");
+        exercicio.setNome(lerTexto("Nome", exercicio.getNome()));
+        exercicio.setGrupoMuscular(lerTexto("Grupo muscular", exercicio.getGrupoMuscular()));
+        exercicio.setDescricao(lerTexto("Descrição", exercicio.getDescricao()));
+
+        // instanceof pra saber de que tipo é e pedir os campos especificos dele
+        if (exercicio instanceof ExercicioDeForca forca) {
+            forca.setCargaKg(lerDouble("Carga (kg)", 0, forca.getCargaKg()));
+            forca.setSeries(lerInteiro("Series", 1, 50, forca.getSeries()));
+            forca.setRepeticoes(lerInteiro("Repetições", 1, 500, forca.getRepeticoes()));
+            forca.setEquipamento(lerTexto("Equipamento", forca.getEquipamento()));
+        } else if (exercicio instanceof ExercicioCardio cardio) {
+            cardio.setDuracaoMinutos(lerInteiro("Duração (minutos)", 1, 600, cardio.getDuracaoMinutos()));
+            cardio.setIntensidade(lerIntensidade(cardio.getIntensidade()));
+        } else if (exercicio instanceof ExercicioFuncional funcional) {
+            funcional.setRodadas(lerInteiro("Rodadas", 1, 100, funcional.getRodadas()));
+            funcional.setTempoPorRodadaSegundos(lerInteiro("Tempo por rodada (segundos)", 1, 3600, funcional.getTempoPorRodadaSegundos()));
+        }
+        servicoDeExercicios.alterar(exercicio);
+        System.out.println("Exercicio alterado.");
+    }
+
+    private static void excluirExercicio() {
+        Exercicio exercicio = servicoDeExercicios.buscarPorId(lerInteiro("ID do exercicio", 1, Integer.MAX_VALUE, null));
+        if (exercicio == null) {
+            System.out.println("Exercicio não encontrado.");
+            return;
+        }
+        if (confirmar("Excluir " + exercicio.getNome() + "? Ele sai de todos os treinos também.")) {
+            servicoDeTreinos.removerExercicioDosTreinos(exercicio);
+            servicoDeExercicios.remover(exercicio.getId());
+            System.out.println("Exercicio excluido.");
+        }
+    }
+
+    private static void ordenarExercicios() {
+        System.out.println("1. Por nome");
+        System.out.println("2. Por grupo muscular");
+        if (lerInteiro("Ordenar", 1, 2, null) == 1) {
+            imprimirExercicios(servicoDeExercicios.listarOrdenadoPorNome());
+        } else {
+            imprimirExercicios(servicoDeExercicios.listarOrdenadoPorGrupoMuscular());
+        }
+    }
+
+    private static void imprimirExercicios(List<Exercicio> exercicios) {
+        if (exercicios.isEmpty()) {
+            System.out.println("Nenhum exercicio encontrado.");
+            return;
+        }
+        System.out.println(Exercicio.cabecalhoTabela());
+        for (Exercicio exercicio : exercicios) {
+            System.out.println(exercicio);
+        }
+    }
+
+    // ==================== TREINOS ====================
+
+    private static void menuTreinos() {
+        int opcao;
+        do {
+            System.out.println();
+            System.out.println("----- TREINOS -----");
+            imprimirSubmenu();
+            opcao = lerInteiro("Opção", 0, 6, null);
+
+            switch (opcao) {
+                case 1 -> incluirTreino();
+                case 2 -> alterarTreino();
+                case 3 -> excluirTreino();
+                case 4 -> imprimirTreinos(servicoDeTreinos.listarTodos());
+                case 5 -> imprimirTreinos(servicoDeTreinos.buscarPorObjetivo(lerObjetivo(null)));
+                case 6 -> ordenarTreinos();
+            }
+        } while (opcao != 0);
+    }
+
+    private static void incluirTreino() {
+        String nome = lerTexto("Nome", null);
+        Objetivo objetivo = lerObjetivo(null);
+        String dia = lerTexto("Dia da semana", null);
+
+        Treino treino = new Treino(0, nome, objetivo, dia);
+        escolherExerciciosDoTreino(treino, true); // treino novo não pode ficar sem exercicio
+        servicoDeTreinos.cadastrar(treino);
+        System.out.println("Treino cadastrado com id " + treino.getId() + ".");
+    }
+
+    private static void alterarTreino() {
+        Treino treino = servicoDeTreinos.buscarPorId(lerInteiro("ID do treino", 1, Integer.MAX_VALUE, null));
+        if (treino == null) {
+            System.out.println("Treino não encontrado.");
+            return;
+        }
+        System.out.println("(aperte enter pra manter o valor atual)");
+        treino.setNome(lerTexto("Nome", treino.getNome()));
+        treino.setObjetivo(lerObjetivo(treino.getObjetivo()));
+        treino.setDiaDaSemana(lerTexto("Dia da semana", treino.getDiaDaSemana()));
+        escolherExerciciosDoTreino(treino, treino.getExercicios().isEmpty());
+        servicoDeTreinos.alterar(treino);
+        System.out.println("Treino alterado.");
+    }
+
+    private static void excluirTreino() {
+        Treino treino = servicoDeTreinos.buscarPorId(lerInteiro("ID do treino", 1, Integer.MAX_VALUE, null));
+        if (treino == null) {
+            System.out.println("Treino não encontrado.");
+            return;
+        }
+        if (confirmar("Excluir " + treino.getNome() + "? Ele sai da lista dos alunos.")) {
+            // os registros antigos continuam, porque são historico do que já foi feito
+            servicoDeAlunos.removerTreinoDosAlunos(treino);
+            servicoDeTreinos.remover(treino.getId());
+            System.out.println("Treino excluido.");
+        }
+    }
+
+    // monta a lista de exercicios do treino a partir dos ids digitados.
+    // se "obrigatorio" for true, fica pedindo até ter pelo menos um exercicio valido (validação de entrada)
+    private static void escolherExerciciosDoTreino(Treino treino, boolean obrigatorio) {
+        System.out.println("Exercicios disponiveis:");
+        imprimirExercicios(servicoDeExercicios.listarTodos());
+        while (true) {
+            List<Integer> ids = lerIds("IDs dos exercicios separados por virgula" + (obrigatorio ? "" : " (enter = manter)"));
+            if (ids == null) {
+                if (!obrigatorio) {
+                    return;
+                }
+                System.out.println("O treino precisa ter pelo menos um exercicio.");
+                continue;
+            }
+            // guarda os antigos, caso nenhum id digitado preste
+            List<Exercicio> antigos = new ArrayList<>(treino.getExercicios());
+            treino.getExercicios().clear();
+            for (int id : ids) {
+                if (!servicoDeTreinos.adicionarExercicio(treino, id)) {
+                    System.out.println("Exercicio " + id + " não existe, ignorei.");
+                }
+            }
+            if (!treino.getExercicios().isEmpty()) {
+                return;
+            }
+            treino.getExercicios().addAll(antigos);
+            System.out.println("Nenhum id valido.");
+            if (!obrigatorio) {
+                return;
+            }
+        }
+    }
+
+    private static void ordenarTreinos() {
+        System.out.println("1. Por nome");
+        System.out.println("2. Por objetivo");
+        if (lerInteiro("Ordenar", 1, 2, null) == 1) {
+            imprimirTreinos(servicoDeTreinos.listarOrdenadoPorNome());
+        } else {
+            imprimirTreinos(servicoDeTreinos.listarOrdenadoPorObjetivo());
+        }
+    }
+
+    private static void imprimirTreinos(List<Treino> treinos) {
+        if (treinos.isEmpty()) {
+            System.out.println("Nenhum treino encontrado.");
+            return;
+        }
+        System.out.println(Treino.cabecalhoTabela());
+        for (Treino treino : treinos) {
+            System.out.println(treino);
+        }
+    }
+
+    // ==================== REGISTROS (treinos realizados) ====================
+
+    private static void menuRegistros() {
+        int opcao;
+        do {
+            System.out.println();
+            System.out.println("----- TREINOS REALIZADOS -----");
+            System.out.println("1. Registrar treino realizado");
+            System.out.println("2. Alterar data de um registro");
+            System.out.println("3. Excluir registro");
+            System.out.println("4. Listar");
+            System.out.println("5. Buscar por aluno");
+            System.out.println("6. Ordenar listagem");
+            System.out.println("7. Alunos sem treinar (alerta de inatividade)");
+            System.out.println("0. Voltar");
+            opcao = lerInteiro("Opção", 0, 7, null);
+
+            switch (opcao) {
+                case 1 -> registrarTreino();
+                case 2 -> alterarRegistro();
+                case 3 -> excluirRegistro();
+                case 4 -> servicoDeRegistros.imprimirTabela(servicoDeRegistros.listarTodos());
+                case 5 -> buscarRegistrosDoAluno();
+                case 6 -> ordenarRegistros();
+                case 7 -> mostrarAlunosInativos();
+            }
+        } while (opcao != 0);
+    }
+
+    // escolhe o aluno, depois um dos treinos DELE, e a data. As calorias o serviço calcula sozinho
+    private static void registrarTreino() {
+        imprimirAlunos(servicoDeAlunos.listarTodos());
+        Aluno aluno = servicoDeAlunos.buscarPorId(lerInteiro("ID do aluno", 1, Integer.MAX_VALUE, null));
+        if (aluno == null) {
+            System.out.println("Aluno não encontrado.");
+            return;
+        }
+        if (aluno.getTreinos().isEmpty()) {
+            System.out.println("Esse aluno ainda não tem treino. Coloque um treino nele no menu de alunos.");
+            return;
+        }
+        imprimirTreinos(aluno.getTreinos());
+        Treino treino = servicoDeTreinos.buscarPorId(lerInteiro("ID do treino", 1, Integer.MAX_VALUE, null));
+        LocalDate data = lerData("Data (dd/mm/aaaa)", LocalDate.now()); // enter = hoje
+
+        RegistroDeTreino registro = servicoDeRegistros.registrarTreino(aluno, treino, data);
+        if (registro == null) {
+            System.out.println("Esse treino não é do aluno.");
+        } else {
+            System.out.println(String.format("Treino registrado! Calorias estimadas: %.1f kcal", registro.getCaloriasEstimadas()));
+        }
+    }
+
+    private static void alterarRegistro() {
+        RegistroDeTreino registro = servicoDeRegistros.buscarPorId(lerInteiro("ID do registro", 1, Integer.MAX_VALUE, null));
+        if (registro == null) {
+            System.out.println("Registro não encontrado.");
+            return;
+        }
+        registro.setData(lerData("Nova data (dd/mm/aaaa)", registro.getData()));
+        servicoDeRegistros.alterar(registro);
+        System.out.println("Registro alterado.");
+    }
+
+    private static void excluirRegistro() {
+        int id = lerInteiro("ID do registro", 1, Integer.MAX_VALUE, null);
+        if (servicoDeRegistros.remover(id)) {
+            System.out.println("Registro excluido.");
+        } else {
+            System.out.println("Registro não encontrado.");
+        }
+    }
+
+    // mostra o historico do aluno e um resuminho com as estatisticas dele
+    private static void buscarRegistrosDoAluno() {
+        Aluno aluno = servicoDeAlunos.buscarPorId(lerInteiro("ID do aluno", 1, Integer.MAX_VALUE, null));
+        if (aluno == null) {
+            System.out.println("Aluno não encontrado.");
+            return;
+        }
+        servicoDeRegistros.imprimirTabela(servicoDeRegistros.listarPorAluno(aluno));
+        LocalDate ultimo = servicoDeRegistros.dataDoUltimoTreino(aluno);
+        System.out.println("Treinos no mes: " + servicoDeRegistros.contarFrequenciaNoMesAtual(aluno));
+        System.out.println(String.format("Total de calorias: %.1f kcal", servicoDeRegistros.totalDeCaloriasDoAluno(aluno)));
+        System.out.println("Ultimo treino: " + (ultimo == null ? "nunca treinou" : ultimo.format(FORMATO_DATA)));
+    }
+
+    private static void ordenarRegistros() {
+        System.out.println("1. Por data");
+        System.out.println("2. Por calorias (maior primeiro)");
+        if (lerInteiro("Ordenar", 1, 2, null) == 1) {
+            servicoDeRegistros.imprimirTabela(servicoDeRegistros.listarOrdenadoPorData());
+        } else {
+            servicoDeRegistros.imprimirTabela(servicoDeRegistros.listarOrdenadoPorCalorias());
+        }
+    }
+
+    private static void mostrarAlunosInativos() {
+        int dias = lerInteiro("Quantos dias sem treinar", 1, 365, 7); // enter = 7 dias
+        System.out.println("Alunos sem treinar nos ultimos " + dias + " dias:");
+        imprimirAlunos(servicoDeRegistros.listarAlunosInativos(servicoDeAlunos.listarTodos(), dias));
+    }
+
+    // ==================== LEITURA DO TECLADO ====================
+    // Todos esses metodos recebem um "valorAtual". Se a pessoa apertar enter sem digitar nada,
+    // volta o valorAtual (é assim que funciona o "manter" no alterar). Se for null, obriga a digitar.
+
+    // opções que se repetem nos menus de alunos, exercicios e treinos
+    private static void imprimirSubmenu() {
+        System.out.println("1. Incluir");
+        System.out.println("2. Alterar");
+        System.out.println("3. Excluir");
+        System.out.println("4. Listar");
+        System.out.println("5. Buscar");
+        System.out.println("6. Ordenar listagem");
+        System.out.println("0. Voltar");
+    }
+
+    // monta o texto da pergunta, tipo "Nome [Ana Souza]: "
+    private static String perguntar(String mensagem, Object valorAtual) {
+        System.out.print(mensagem + (valorAtual == null ? "" : " [" + valorAtual + "]") + ": ");
+        return entrada.nextLine().trim();
+    }
+
+    private static String lerTexto(String mensagem, String valorAtual) {
+        while (true) {
+            String texto = perguntar(mensagem, valorAtual);
+            if (!texto.isEmpty()) {
+                return texto;
+            }
+            if (valorAtual != null) {
+                return valorAtual;
+            }
+            System.out.println("Não pode ficar em branco.");
+        }
+    }
+
+    // lê um numero inteiro entre minimo e maximo. Se digitar letra ou fora da faixa, pergunta de novo
+    private static int lerInteiro(String mensagem, int minimo, int maximo, Integer valorAtual) {
+        while (true) {
+            String texto = perguntar(mensagem, valorAtual);
+            if (texto.isEmpty() && valorAtual != null) {
+                return valorAtual;
+            }
+            try {
+                int numero = Integer.parseInt(texto);
+                if (numero >= minimo && numero <= maximo) {
+                    return numero;
+                }
+                System.out.println("Digite um numero entre " + minimo + " e " + maximo + ".");
+            } catch (NumberFormatException e) {
+                System.out.println("Isso não é um numero valido.");
+            }
+        }
+    }
+
+    // igual ao de cima mas pra numero com virgula. Aceita tanto 62,5 quanto 62.5
+    private static double lerDouble(String mensagem, double minimo, Double valorAtual) {
+        while (true) {
+            String texto = perguntar(mensagem, valorAtual);
+            if (texto.isEmpty() && valorAtual != null) {
+                return valorAtual;
+            }
+            try {
+                double numero = Double.parseDouble(texto.replace(',', '.'));
+                if (numero >= minimo) {
+                    return numero;
+                }
+                System.out.println("O valor minimo é " + minimo + ".");
+            } catch (NumberFormatException e) {
+                System.out.println("Isso não é um numero valido.");
+            }
+        }
+    }
+
+    // lê uma data no formato dd/mm/aaaa. Não deixa colocar data no futuro
+    private static LocalDate lerData(String mensagem, LocalDate valorAtual) {
+        while (true) {
+            String texto = perguntar(mensagem, valorAtual == null ? null : valorAtual.format(FORMATO_DATA));
+            if (texto.isEmpty() && valorAtual != null) {
+                return valorAtual;
+            }
+            try {
+                LocalDate data = LocalDate.parse(texto, FORMATO_DATA);
+                if (!data.isAfter(LocalDate.now())) {
+                    return data;
+                }
+                System.out.println("A data não pode ser no futuro.");
+            } catch (DateTimeParseException e) {
+                System.out.println("Data invalida, use dd/mm/aaaa.");
+            }
+        }
+    }
+
+    // mostra as opções do enum numeradas e devolve a escolhida
+    private static Objetivo lerObjetivo(Objetivo valorAtual) {
+        Objetivo[] opcoes = Objetivo.values();
+        for (int i = 0; i < opcoes.length; i++) {
+            System.out.println((i + 1) + ". " + opcoes[i]);
+        }
+        int escolha = lerInteiro("Objetivo", 1, opcoes.length, valorAtual == null ? null : valorAtual.ordinal() + 1);
+        return opcoes[escolha - 1];
+    }
+
+    private static Intensidade lerIntensidade(Intensidade valorAtual) {
+        Intensidade[] opcoes = Intensidade.values();
+        for (int i = 0; i < opcoes.length; i++) {
+            System.out.println((i + 1) + ". " + opcoes[i]);
+        }
+        int escolha = lerInteiro("Intensidade", 1, opcoes.length, valorAtual == null ? null : valorAtual.ordinal() + 1);
+        return opcoes[escolha - 1];
+    }
+
+    // lê uma lista de ids tipo "1, 4, 7". Devolve null se a pessoa só apertou enter
+    private static List<Integer> lerIds(String mensagem) {
+        while (true) {
+            String texto = perguntar(mensagem, null);
+            if (texto.isEmpty()) {
+                return null;
+            }
+            try {
+                List<Integer> ids = new ArrayList<>();
+                for (String parte : texto.split(",")) {
+                    ids.add(Integer.parseInt(parte.trim()));
+                }
+                return ids;
+            } catch (NumberFormatException e) {
+                System.out.println("Use só numeros separados por virgula, tipo 1, 3, 5");
+            }
+        }
+    }
+
+    // pergunta sim ou não antes de apagar alguma coisa
+    private static boolean confirmar(String mensagem) {
+        return perguntar(mensagem + " (s/n)", null).equalsIgnoreCase("s");
+    }
+
+    // ==================== DADOS INICIAIS ====================
+
+    // cadastra 7 objetos de cada classe quando o programa abre (requisito 8),
+    // assim já da pra testar tudo sem ter que digitar um monte de coisa
+    private static void carregarDadosIniciais() {
+        // exercicios de força (ids 1 a 7)
+        servicoDeExercicios.cadastrar(new ExercicioDeForca(0, "Supino reto", "Peito", "Deitado no banco, empurra a barra", 40, 4, 10, "Barra"));
+        servicoDeExercicios.cadastrar(new ExercicioDeForca(0, "Agachamento livre", "Pernas", "Agacha com a barra nas costas", 60, 4, 10, "Barra"));
+        servicoDeExercicios.cadastrar(new ExercicioDeForca(0, "Leg press", "Pernas", "Empurra a plataforma com as pernas", 120, 4, 12, "Maquina"));
+        servicoDeExercicios.cadastrar(new ExercicioDeForca(0, "Remada curvada", "Costas", "Tronco inclinado, puxa a barra", 35, 4, 10, "Barra"));
+        servicoDeExercicios.cadastrar(new ExercicioDeForca(0, "Desenvolvimento", "Ombros", "Sentado, empurra os halteres pra cima", 20, 3, 12, "Halteres"));
+        servicoDeExercicios.cadastrar(new ExercicioDeForca(0, "Rosca direta", "Biceps", "Flexiona o cotovelo com a barra", 15, 3, 12, "Barra W"));
+        servicoDeExercicios.cadastrar(new ExercicioDeForca(0, "Levantamento terra", "Costas", "Tira a barra do chão com as costas retas", 80, 3, 8, "Barra"));
+
+        // cardio (ids 8 a 14)
+        servicoDeExercicios.cadastrar(new ExercicioCardio(0, "Esteira", "Pernas", "Corrida leve", 30, Intensidade.MEDIA));
+        servicoDeExercicios.cadastrar(new ExercicioCardio(0, "Bicicleta ergometrica", "Pernas", "Pedalar com carga baixa", 40, Intensidade.BAIXA));
+        servicoDeExercicios.cadastrar(new ExercicioCardio(0, "Eliptico", "Corpo inteiro", "Movimento continuo no eliptico", 25, Intensidade.MEDIA));
+        servicoDeExercicios.cadastrar(new ExercicioCardio(0, "Corda", "Corpo inteiro", "Pular corda", 15, Intensidade.ALTA));
+        servicoDeExercicios.cadastrar(new ExercicioCardio(0, "Remo", "Costas", "Remo ergometrico", 20, Intensidade.ALTA));
+        servicoDeExercicios.cadastrar(new ExercicioCardio(0, "Escada", "Pernas", "Simulador de escada", 15, Intensidade.ALTA));
+        servicoDeExercicios.cadastrar(new ExercicioCardio(0, "Caminhada inclinada", "Pernas", "Esteira com inclinação", 35, Intensidade.BAIXA));
+
+        // funcionais (ids 15 a 21)
+        servicoDeExercicios.cadastrar(new ExercicioFuncional(0, "Burpee", "Corpo inteiro", "Agacha, prancha, flexão e salto", 5, 40));
+        servicoDeExercicios.cadastrar(new ExercicioFuncional(0, "Kettlebell swing", "Posterior", "Balança o kettlebell até a altura do peito", 4, 45));
+        servicoDeExercicios.cadastrar(new ExercicioFuncional(0, "Box jump", "Pernas", "Salto em cima da caixa", 4, 30));
+        servicoDeExercicios.cadastrar(new ExercicioFuncional(0, "Mountain climber", "Abdomen", "Na prancha, puxa os joelhos alternando", 5, 30));
+        servicoDeExercicios.cadastrar(new ExercicioFuncional(0, "Afundo com salto", "Pernas", "Afundo trocando a perna no ar", 4, 40));
+        servicoDeExercicios.cadastrar(new ExercicioFuncional(0, "Prancha dinamica", "Abdomen", "Sobe e desce da prancha alta pra baixa", 4, 45));
+        servicoDeExercicios.cadastrar(new ExercicioFuncional(0, "Circuito de agachamento com salto", "Pernas", "Agachamento e salto sem parar", 5, 60));
+
+        // treinos, cada um com seus exercicios (pelos ids de cima)
+        criarTreinoInicial("Peito e ombro", Objetivo.HIPERTROFIA, "Segunda", 1, 5);
+        criarTreinoInicial("Pernas pesado", Objetivo.HIPERTROFIA, "Terça", 2, 3);
+        criarTreinoInicial("Costas e biceps", Objetivo.HIPERTROFIA, "Quarta", 4, 6, 7);
+        criarTreinoInicial("Queima total", Objetivo.EMAGRECIMENTO, "Quinta", 8, 11, 15);
+        criarTreinoInicial("Cardio leve", Objetivo.EMAGRECIMENTO, "Sexta", 9, 14);
+        criarTreinoInicial("Circuito funcional", Objetivo.CONDICIONAMENTO, "Sabado", 16, 17, 18, 19);
+        criarTreinoInicial("Resistencia", Objetivo.CONDICIONAMENTO, "Domingo", 12, 13, 20, 21);
+
+        // alunos (ids 1 a 7) e os treinos de cada um
+        criarAlunoInicial("Ana Souza", 28, 62.5, 1.65, LocalDate.of(2026, 2, 10), 4, 5);
+        criarAlunoInicial("Bruno Lima", 35, 84.0, 1.80, LocalDate.of(2026, 3, 5), 1, 2, 3);
+        criarAlunoInicial("Carla Mendes", 22, 58.0, 1.60, LocalDate.of(2026, 4, 20), 6);
+        criarAlunoInicial("Diego Rocha", 41, 90.3, 1.75, LocalDate.of(2026, 5, 2), 2, 7);
+        criarAlunoInicial("Elisa Martins", 30, 70.2, 1.68, LocalDate.of(2026, 6, 15), 4, 6);
+        criarAlunoInicial("Felipe Andrade", 19, 68.0, 1.77, LocalDate.of(2026, 8, 1), 1, 3);
+        criarAlunoInicial("Gabriela Nunes", 26, 55.4, 1.58, LocalDate.of(2026, 9, 12), 5, 7);
+
+        // registros contando pra tras a partir de hoje, pra cair no mesmo mes e a frequencia ter o que mostrar.
+        // Felipe e Gabriela ficam sem registro de proposito, pra aparecer no alerta de inatividade
+        LocalDate hoje = LocalDate.now();
+        criarRegistroInicial(1, 4, hoje.minusDays(1));
+        criarRegistroInicial(1, 5, hoje.minusDays(3));
+        criarRegistroInicial(2, 1, hoje.minusDays(2));
+        criarRegistroInicial(2, 2, hoje.minusDays(5));
+        criarRegistroInicial(3, 6, hoje);
+        criarRegistroInicial(4, 7, hoje.minusDays(12));
+        criarRegistroInicial(5, 4, hoje.minusDays(9));
+    }
+
+    // os "int..." deixam passar quantos ids de exercicio quiser
+    private static void criarTreinoInicial(String nome, Objetivo objetivo, String dia, int... idsExercicios) {
+        Treino treino = new Treino(0, nome, objetivo, dia);
+        for (int id : idsExercicios) {
+            servicoDeTreinos.adicionarExercicio(treino, id);
+        }
+        servicoDeTreinos.cadastrar(treino);
+    }
+
+    private static void criarAlunoInicial(String nome, int idade, double peso, double altura, LocalDate cadastro, int... idsTreinos) {
+        Aluno aluno = new Aluno(0, cadastro, altura, peso, idade, nome);
+        for (int id : idsTreinos) {
+            aluno.getTreinos().add(servicoDeTreinos.buscarPorId(id));
+        }
+        servicoDeAlunos.cadastrar(aluno);
+    }
+
+    private static void criarRegistroInicial(int idAluno, int idTreino, LocalDate data) {
+        servicoDeRegistros.registrarTreino(servicoDeAlunos.buscarPorId(idAluno), servicoDeTreinos.buscarPorId(idTreino), data);
+    }
+}
