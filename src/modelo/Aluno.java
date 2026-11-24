@@ -2,18 +2,21 @@ package modelo;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 
+// Aluno da academia. Cada aluno tem a lista de treinos dele (composição).
 public class Aluno {
-    private Integer id;
+    private int id;
     private String nome;
-    private Integer idade;
-    private Double pesoKg;
-    private Double alturaM;
+    private int idade;
+    private double pesoKg;
+    private double alturaM;
     private LocalDate dataDeCadastro;
 
-    private ArrayList <Treino> treinos = new ArrayList<>();
+    // começa vazia, os treinos vão sendo colocados depois
+    private List<Treino> treinos = new ArrayList<>();
 
-    public Aluno(Integer id, LocalDate dataDeCadastro, Double alturaM, Double pesoKg, Integer idade, String nome) {
+    public Aluno(int id, LocalDate dataDeCadastro, double alturaM, double pesoKg, int idade, String nome) {
         this.id = id;
         this.dataDeCadastro = dataDeCadastro;
         this.alturaM = alturaM;
@@ -22,7 +25,7 @@ public class Aluno {
         this.nome = nome;
     }
 
-    public void setId(Integer id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -30,19 +33,27 @@ public class Aluno {
         this.nome = nome;
     }
 
-    public void setIdade(Integer idade) {
+    public void setIdade(int idade) {
         this.idade = idade;
+    }
+
+    public void setPesoKg(double pesoKg) {
+        this.pesoKg = pesoKg;
+    }
+
+    public void setAlturaM(double alturaM) {
+        this.alturaM = alturaM;
     }
 
     public void setDataDeCadastro(LocalDate dataDeCadastro) {
         this.dataDeCadastro = dataDeCadastro;
     }
 
-    public Double getAlturaM() {
+    public double getAlturaM() {
         return alturaM;
     }
 
-    public Integer getId() {
+    public int getId() {
         return id;
     }
 
@@ -50,11 +61,11 @@ public class Aluno {
         return nome;
     }
 
-    public Integer getIdade() {
+    public int getIdade() {
         return idade;
     }
 
-    public Double getPesoKg() {
+    public double getPesoKg() {
         return pesoKg;
     }
 
@@ -62,7 +73,7 @@ public class Aluno {
         return dataDeCadastro;
     }
 
-    public ArrayList<Treino> getTreinos() {
+    public List<Treino> getTreinos() {
         return treinos;
     }
 }

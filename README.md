@@ -21,29 +21,33 @@ e registrar os treinos realizados. A especificação completa está em
 
 ```
 src/
-  entidades/           classes de domínio (pacote entidades)
+  modelo/              classes de domínio
     Monitoravel.java   interface de cálculo de calorias
     Exercicio.java     classe abstrata base dos exercícios
-  aplicacao/           ponto de entrada e menus (pacote aplicacao)
-    Programa.java      (a fazer)
+    ExercicioDeForca.java, ExercicioCardio.java, ExercicioFuncional.java
+    Treino.java, Aluno.java, RegistroDeTreino.java
+    enumeradas/        Objetivo, Intensidade
+  repositorio/         RepositorioDeDados<T> (interface) e RepositorioEmLista<T> (ArrayList)
+  servico/             ServicoDeAlunos, ServicoDeExercicios, ServicoDeTreinos, ServicoDeRegistros
+  aplicacao/
+    Programa.java      main, menus, dados iniciais (7 de cada classe)
 ```
 
 ## Progresso
 
-- [x] `Monitoravel`
-- [x] `Exercicio`
-- [ ] `ExercicioDeForca`, `ExercicioCardio`, `ExercicioFuncional`
-- [ ] `Treino`, `Aluno`, `RegistroDeTreino`
-- [ ] `RepositorioDeDados<T>`, `RepositorioEmLista<T>`
-- [ ] Serviços (`ServicoDeAlunos`, `ServicoDeExercicios`, `ServicoDeTreinos`, `ServicoDeRegistros`)
-- [ ] `Programa.java` com menus e 7 objetos iniciais de cada classe
+- [x] `Monitoravel`, `Exercicio` e as 3 subclasses
+- [x] `Treino`, `Aluno`, `RegistroDeTreino`
+- [x] `RepositorioDeDados<T>`, `RepositorioEmLista<T>`
+- [x] Serviços (`ServicoDeAlunos`, `ServicoDeExercicios`, `ServicoDeTreinos`, `ServicoDeRegistros`)
+- [x] `Programa.java` com menus e 7 objetos iniciais de cada classe
+- [x] Diferenciais: alerta de inatividade e validação de entrada
 
 ## Como compilar e executar
 
 Requer JDK 17+.
 
 ```bash
-javac -d out src/entidades/*.java src/aplicacao/*.java
+javac -encoding UTF-8 -d out src/modelo/*.java src/modelo/enumeradas/*.java src/repositorio/*.java src/servico/*.java src/aplicacao/*.java
 java -cp out aplicacao.Programa
 ```
 
